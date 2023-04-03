@@ -25,6 +25,8 @@ var plugin_names := ["Resource Bank"]
 func _update_plugins_list():
 	plugin_directories.clear()
 	plugin_names.clear()
+	var selected_prior = options.selected
+	
 	options.clear()
 	var dir := DirAccess.open(PLUGIN_FOLDER)
 	
@@ -38,7 +40,7 @@ func _update_plugins_list():
 		btn_refresh.disabled = false
 		for i in plugin_names:
 			options.add_item(i)
-		options.select(0)
+		options.select(min(plugin_directories.size(), selected_prior))
 	else:
 		options.add_separator("No Plugins To Refresh.")
 		options.selected = -1
