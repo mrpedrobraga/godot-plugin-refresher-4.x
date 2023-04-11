@@ -2,22 +2,24 @@
 extends Control
 
 @onready var options = %options
-@onready var btn_refresh = %btn_refresh
+@onready var btn_toggle = %btn_toggle
 
 var plugin : EditorPlugin
 
 const PLUGIN_FOLDER := "res://addons/"
 
 func _ready():
-	btn_refresh.icon = plugin.get_editor_interface().get_base_control().get_theme_icon("RotateLeft", "EditorIcons")
 	plugin.main_screen_changed.connect(update_current_main_screen)
 	
-	_on_options_button_down()
+	await get_tree().process_frame
+	_update_plugins_list()
+	_on_options_item_selected(0)
 
-var current_main_screen := "2D"
+var current_main_screen = null
 
 func update_current_main_screen(s):
-	current_main_screen = s
+	if btn_toggle.button_pressed:
+		current_main_screen = s
 
 var plugin_directories := ["resource_bank_editor"]
 var plugin_names := ["Resource Bank"]
@@ -30,17 +32,17 @@ func _update_plugins_list():
 	options.clear()
 	var dir := DirAccess.open(PLUGIN_FOLDER)
 	
-	btn_refresh.disabled = true
+	btn_toggle.disabled = true
 	
 	for pdir in dir.get_directories():
 		if not pdir == "plugin_refresher":
 			_search_dir_for_plugins(PLUGIN_FOLDER, pdir)
 	
 	if plugin_directories.size() > 0:
-		btn_refresh.disabled = false
+		btn_toggle.disabled = false
 		for i in plugin_names:
 			options.add_item(i)
-		options.select(min(plugin_directories.size(), selected_prior))
+		options.select(clamp(selected_prior, 0, plugin_directories.size() - 1))
 	else:
 		options.add_separator("No Plugins To Refresh.")
 		options.selected = -1
@@ -61,23 +63,26 @@ func _search_dir_for_plugins(base : String, dir_name : String):
 	for subdir in dir.get_directories():
 		if not subdir == "plugin_refresher":
 			_search_dir_for_plugins(path, subdir)
-	
 
 func _on_options_button_down():
 	_update_plugins_list()
 
-func _on_btn_refresh_pressed():
+func _on_btn_toggle_toggled(button_pressed):
 	var plugin_name = plugin_directories[options.selected]
 	
-	var current_main_screen_bkp := current_main_screen
+	var current_main_screen_bkp = current_main_screen
 	
-	if plugin.get_editor_interface().is_plugin_enabled(plugin_name):
-		plugin.get_editor_interface().set_plugin_enabled(plugin_name, false)
-	plugin.get_editor_interface().set_plugin_enabled(plugin_name, true)
+	plugin.get_editor_interface().set_plugin_enabled(plugin_name, button_pressed)
 	
-	if current_main_screen_bkp:
-		plugin.get_editor_interface().set_main_screen_editor(current_main_screen_bkp)
-	print("Refreshing plugin \"", plugin_names[options.selected], "\"")
+	if button_pressed:
+		if current_main_screen_bkp:
+			plugin.get_editor_interface().set_main_screen_editor(current_main_screen_bkp)
+	
+	print("\"", plugin_names[options.selected], "\" : ", "ON" if button_pressed else "OFF")
+
+func _on_options_item_selected(index):
+	var plugin_name = plugin_directories[index]
+	btn_toggle.button_pressed = plugin.get_editor_interface().is_plugin_enabled(plugin_name)
 
 func find_visible_child(node : Control):
 	for child in node.get_children():
@@ -98,5 +103,3 @@ func get_main_screen()->String:
 			screen = button.text
 			break
 	return screen
-
-
