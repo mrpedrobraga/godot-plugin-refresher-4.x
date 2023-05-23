@@ -82,7 +82,7 @@ func _on_btn_toggle_toggled(button_pressed):
 
 func _on_options_item_selected(index):
 	var plugin_name = plugin_directories[index]
-	btn_toggle.button_pressed = plugin.get_editor_interface().is_plugin_enabled(plugin_name)
+	btn_toggle.set_pressed_no_signal(plugin.get_editor_interface().is_plugin_enabled(plugin_name))
 
 func find_visible_child(node : Control):
 	for child in node.get_children():
