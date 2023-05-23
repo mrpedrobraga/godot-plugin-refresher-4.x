@@ -1,8 +1,11 @@
 @tool
 extends Control
 
-@onready var options = %options
-@onready var btn_toggle = %btn_toggle
+const PROJECT_METADATA_SECTION = "plugin_refresher"
+const PROJECT_METADATA_KEY = "plugin_name" 
+
+@onready var options := %options
+@onready var btn_toggle := %btn_toggle
 
 var plugin : EditorPlugin
 
@@ -13,7 +16,9 @@ func _ready():
 	
 	await get_tree().process_frame
 	_update_plugins_list()
-	_on_options_item_selected(0)
+	var plugin_directory := plugin.get_editor_interface().get_editor_settings().get_project_metadata(PROJECT_METADATA_SECTION, PROJECT_METADATA_KEY, "")
+	var idx := plugin_directories.find(plugin_directory)
+	options.selected = idx if idx >= 0 else 0
 
 var current_main_screen = null
 
@@ -81,8 +86,9 @@ func _on_btn_toggle_toggled(button_pressed):
 	print("\"", plugin_names[options.selected], "\" : ", "ON" if button_pressed else "OFF")
 
 func _on_options_item_selected(index):
-	var plugin_name = plugin_directories[index]
-	btn_toggle.set_pressed_no_signal(plugin.get_editor_interface().is_plugin_enabled(plugin_name))
+	var plugin_directory = plugin_directories[index]
+	btn_toggle.set_pressed_no_signal(plugin.get_editor_interface().is_plugin_enabled(plugin_directory))
+	plugin.get_editor_interface().get_editor_settings().set_project_metadata(PROJECT_METADATA_SECTION, PROJECT_METADATA_KEY, plugin_directory)
 
 func find_visible_child(node : Control):
 	for child in node.get_children():
