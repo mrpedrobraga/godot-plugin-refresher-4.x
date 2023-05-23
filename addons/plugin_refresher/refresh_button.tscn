@@ -3,18 +3,15 @@
 [ext_resource type="Script" path="res://addons/plugin_refresher/refresh_button.gd" id="1_ykbr2"]
 
 [node name="HBoxContainer" type="HBoxContainer"]
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-tooltip_text = "The Plugin to refresh."
+offset_right = 91.0
+offset_bottom = 24.0
 script = ExtResource("1_ykbr2")
 
 [node name="options" type="OptionButton" parent="."]
 unique_name_in_owner = true
 layout_mode = 2
-tooltip_text = "The dropdown selects which plugin will be refreshed."
+tooltip_text = "Select plugin to refresh"
+focus_mode = 0
 item_count = 1
 fit_to_longest_item = false
 popup/item_0/text = "Unknown"
@@ -23,6 +20,10 @@ popup/item_0/id = 0
 [node name="btn_toggle" type="CheckButton" parent="."]
 unique_name_in_owner = true
 layout_mode = 2
+tooltip_text = "No plugin selected
+(Select plugin on the left)"
+focus_mode = 0
+disabled = true
 
 [connection signal="button_down" from="options" to="." method="_on_options_button_down"]
 [connection signal="item_selected" from="options" to="." method="_on_options_item_selected"]

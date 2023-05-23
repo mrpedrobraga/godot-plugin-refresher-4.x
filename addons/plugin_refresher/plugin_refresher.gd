@@ -9,5 +9,6 @@ func _enter_tree():
 	add_control_to_container(EditorPlugin.CONTAINER_TOOLBAR, refresh_button)
 
 func _exit_tree():
+	remove_control_from_container(EditorPlugin.CONTAINER_TOOLBAR, refresh_button)
 	if refresh_button:
 		refresh_button.queue_free()
