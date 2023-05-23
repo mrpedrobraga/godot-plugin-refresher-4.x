@@ -19,6 +19,7 @@ func _ready():
 	var plugin_directory := plugin.get_editor_interface().get_editor_settings().get_project_metadata(PROJECT_METADATA_SECTION, PROJECT_METADATA_KEY, "")
 	var idx := plugin_directories.find(plugin_directory)
 	options.selected = idx if idx >= 0 else 0
+	_update_btn_toggle_state()
 
 var current_main_screen = null
 
@@ -86,9 +87,16 @@ func _on_btn_toggle_toggled(button_pressed):
 	print("\"", plugin_names[options.selected], "\" : ", "ON" if button_pressed else "OFF")
 
 func _on_options_item_selected(index):
-	var plugin_directory = plugin_directories[index]
-	btn_toggle.set_pressed_no_signal(plugin.get_editor_interface().is_plugin_enabled(plugin_directory))
-	plugin.get_editor_interface().get_editor_settings().set_project_metadata(PROJECT_METADATA_SECTION, PROJECT_METADATA_KEY, plugin_directory)
+	_update_btn_toggle_state()
+	plugin.get_editor_interface().get_editor_settings().set_project_metadata(PROJECT_METADATA_SECTION, PROJECT_METADATA_KEY, plugin_directories[options.selected])
+
+func _update_btn_toggle_state():
+	var plugin_enabled = plugin.get_editor_interface().is_plugin_enabled(plugin_directories[options.selected])
+	if btn_toggle.button_pressed != plugin_enabled:
+		btn_toggle.set_pressed_no_signal(plugin_enabled)
+
+func _process(delta):
+	_update_btn_toggle_state()
 
 func find_visible_child(node : Control):
 	for child in node.get_children():
