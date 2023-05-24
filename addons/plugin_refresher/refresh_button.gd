@@ -101,6 +101,8 @@ func _search_dir_for_plugins(plugin_folder: String, relative_base_folder: String
 	for subdir_name in dir.get_directories():
 		var relative_folder = relative_base_folder.path_join(subdir_name)
 		var subdir := DirAccess.open(path.path_join(subdir_name))
+		if subdir == null: # Can happen for symlink. They are listed as folder, but if the link is broken, DirAccess returns null
+			continue
 		for file in subdir.get_files():
 			if file == "plugin.cfg":
 				if plugin_folder.path_join(relative_folder) == plugin.get_script().resource_path.get_base_dir():
