@@ -6,19 +6,31 @@ const PROJECT_METADATA_KEY = "selected_plugin"
 
 const EDITOR_SETTINGS_NAME_PREFIX = "refresher_plugin/"
 const EDITOR_SETTINGS_NAME_COMPACT = EDITOR_SETTINGS_NAME_PREFIX + "compact"
+const EDITOR_SETTINGS_NAME_SHOW_ENABLE_MENU = EDITOR_SETTINGS_NAME_PREFIX + "show_enable_menu"
+const EDITOR_SETTINGS_NAME_SHOW_SWITCH = EDITOR_SETTINGS_NAME_PREFIX + "show_switch"
 
-var icon := preload("plug_icon.svg")
+var switch_icon := preload("plug_switch_icon.svg")
+var list_icon := preload("plug_list_icon.svg")
 
+@export var show_enable_menu: bool = true:
+	set(value):
+		show_enable_menu = value
+		_update_children_visibility()
+@export var show_switch: bool = true:
+	set(value):
+		show_switch = value
+		_update_children_visibility()
 @export var compact: bool = false:
 	set(value):
 		compact = value
-		_update_options_button_look()
+		_update_switch_options_button_look()
 @export var icon_next_to_plugin_name := true:
 	set(value):
 		icon_next_to_plugin_name = value
-		_update_options_button_look()
+		_update_switch_options_button_look()
 
-@onready var options := %options
+@onready var enable_menu := %enable_menu
+@onready var switch_options := %switch_options
 @onready var btn_toggle := %btn_toggle
 
 var plugin : EditorPlugin
@@ -32,11 +44,20 @@ func _ready():
 	_update_plugins_list()
 	var selected_plugin := plugin.get_editor_interface().get_editor_settings().get_project_metadata(PROJECT_METADATA_SECTION, PROJECT_METADATA_KEY, "")
 	selected_plugin_index = plugin_ids.find(selected_plugin)
-	_update_popup()
+	
+	enable_menu.icon = list_icon
+	enable_menu.about_to_popup.connect(_on_enable_menu_about_to_popup)
+	enable_menu.get_popup().index_pressed.connect(_on_enable_menu_item_selected)
 	
 	if plugin.get_editor_interface().get_editor_settings().has_setting(EDITOR_SETTINGS_NAME_COMPACT):
 		compact = plugin.get_editor_interface().get_editor_settings().get_setting(EDITOR_SETTINGS_NAME_COMPACT)
-	_update_options_button_look()
+	_update_switch_options_button_look()
+	switch_options.button_down.connect(_on_switch_options_button_down)
+	switch_options.item_selected.connect(_on_switch_options_item_selected)
+
+	btn_toggle.toggled.connect(_on_btn_toggle_toggled)
+	
+	_update_children_visibility()
 	_update_btn_toggle_state()
 
 var current_main_screen = null
@@ -52,7 +73,11 @@ var plugin_ids := PackedStringArray()
 var plugin_directories := PackedStringArray()
 var plugin_names := PackedStringArray()
 var selected_plugin_index = -1
+
+var show_switch_option_index = -1
+
 var compact_view_option_index = -1
+var show_enable_menu_option_index = -1
 
 func _update_plugins_list():
 	var selected_prior = null
@@ -87,60 +112,115 @@ func _search_dir_for_plugins(plugin_folder: String, relative_base_folder: String
 				plugin_names.push_back(plugincfg.get_value("plugin", "name", ""))
 		_search_dir_for_plugins(plugin_folder, relative_folder)
 
-func _update_popup():
+func _is_plugin_enabled(plugin_index: int) -> bool:
+	return plugin.get_editor_interface().is_plugin_enabled(plugin_directories[plugin_index])
+
+func _set_plugin_enabled(plugin_index: int, enabled: bool):
+	plugin.get_editor_interface().set_plugin_enabled(plugin_directories[plugin_index], enabled)
+
+func _update_enable_menu_popup():
 	_update_plugins_list()
 	
-	options.clear()
+	var popup = enable_menu.get_popup()
+	popup.clear()
+	
+	var popup_item_idx = 0
+	if plugin_ids.size() > 0:
+		for i in plugin_ids.size():
+			popup.add_check_item(plugin_names[i])
+			popup.set_item_checked(i, _is_plugin_enabled(i))
+			popup_item_idx += 1
+	else:
+		popup.add_separator("No plugins")
+		popup_item_idx += 1
+	popup.add_separator()
+	popup_item_idx += 1
+	if !show_switch:
+		popup.add_item("Show quick switch")
+	else:
+		popup.add_item("Hide quick switch")
+	show_switch_option_index = popup_item_idx
+	popup_item_idx += 1 # just for the case further options will be added
+
+func _update_switch_button_popup():
+	_update_plugins_list()
+	
+	switch_options.clear()
 	btn_toggle.disabled = true
 	
 	var popup_item_idx = 0
 	if plugin_ids.size() > 0:
 		btn_toggle.disabled = false
 		for i in plugin_ids.size():
-			options.add_item(plugin_names[i])
+			switch_options.add_item(plugin_names[i])
 			popup_item_idx += 1
-		options.selected = selected_plugin_index
+		switch_options.selected = selected_plugin_index
 	else:
-		options.add_separator("No plugins")
+		switch_options.add_separator("No plugins")
 		popup_item_idx += 1
-		options.selected = -1
-	options.add_separator()
+		switch_options.selected = -1
+	switch_options.add_separator()
 	popup_item_idx += 1
 	if !compact:
-		options.get_popup().add_item("Set compact view")
+		switch_options.get_popup().add_item("Set compact view")
 	else:
-		options.get_popup().add_item("Show plug-in name")
+		switch_options.get_popup().add_item("Show plug-in name")
 	compact_view_option_index = popup_item_idx
+	popup_item_idx += 1
+	if !show_enable_menu:
+		switch_options.get_popup().add_item("Show enable menu")
+	else:
+		switch_options.get_popup().add_item("Hide enable menu")
+	show_enable_menu_option_index = popup_item_idx
 	popup_item_idx += 1 # just for the case further options will be added
 
-func _on_options_button_down():
-	_update_popup()
-	_update_options_button_look()
+func _on_enable_menu_about_to_popup():
+	_update_enable_menu_popup()
+
+func _on_enable_menu_item_selected(index):
+	if index == show_switch_option_index:
+		show_switch = !show_switch
+		plugin.get_editor_interface().get_editor_settings().set_setting(EDITOR_SETTINGS_NAME_SHOW_SWITCH, show_switch)
+	elif index < plugin_ids.size():
+		_set_plugin_enabled(index, !_is_plugin_enabled(index))
+		
+func _on_switch_options_button_down():
+	_update_switch_button_popup()
+	_update_switch_options_button_look()
 
 func _on_btn_toggle_toggled(button_pressed):
 	var current_main_screen_bkp = current_main_screen
 	
 	if selected_plugin_index >= 0:
-		plugin.get_editor_interface().set_plugin_enabled(plugin_directories[selected_plugin_index], button_pressed)
-		print("\"", plugin_names[selected_plugin_index], "\" : ", "ON" if button_pressed else "OFF")
+		_set_plugin_enabled(selected_plugin_index, button_pressed)
 	
 	if button_pressed:
 		if current_main_screen_bkp:
 			plugin.get_editor_interface().set_main_screen_editor(current_main_screen_bkp)
-	
 
-func _on_options_item_selected(index):
+func _on_switch_options_item_selected(index):
 	if index == compact_view_option_index:
 		compact = !compact
 		plugin.get_editor_interface().get_editor_settings().set_setting(EDITOR_SETTINGS_NAME_COMPACT, compact)
-		options.selected = selected_plugin_index
+		switch_options.selected = selected_plugin_index
+	elif index == show_enable_menu_option_index:
+		show_enable_menu = !show_enable_menu
+		plugin.get_editor_interface().get_editor_settings().set_setting(EDITOR_SETTINGS_NAME_SHOW_ENABLE_MENU, show_enable_menu)
 	elif index < plugin_ids.size():
-		plugin.get_editor_interface().get_editor_settings().set_project_metadata(PROJECT_METADATA_SECTION, PROJECT_METADATA_KEY, plugin_directories[options.selected])
+		plugin.get_editor_interface().get_editor_settings().set_project_metadata(PROJECT_METADATA_SECTION, PROJECT_METADATA_KEY, plugin_directories[switch_options.selected])
 		selected_plugin_index = index
 		if selected_plugin_index >= plugin_ids.size():
 			selected_plugin_index = -1
 		_update_btn_toggle_state()
-	_update_options_button_look()
+	_update_switch_options_button_look()
+
+func _update_children_visibility():
+	if enable_menu != null:
+		enable_menu.visible = show_enable_menu
+	if switch_options != null:
+		switch_options.visible = show_switch
+	if btn_toggle != null:
+		btn_toggle.visible = show_switch
 
 func _update_btn_toggle_state():
 	if plugin != null and selected_plugin_index >= 0:
@@ -157,17 +237,17 @@ func _update_btn_toggle_state():
 		btn_toggle.tooltip_text = "No plugin selected" \
 			+ "\n(Select plugin on the left)"
 
-func _update_options_button_look():
+func _update_switch_options_button_look():
 	if compact:
-		options.text = ""
-		options.icon = icon
+		switch_options.text = ""
+		switch_options.icon = switch_icon
 	else:
 		if selected_plugin_index >= 0:
-			options.text = plugin_names[selected_plugin_index]
-			options.icon = icon if icon_next_to_plugin_name else null
+			switch_options.text = plugin_names[selected_plugin_index]
+			switch_options.icon = switch_icon if icon_next_to_plugin_name else null
 		else:
-			options.text = "No plugin selected"
-			options.icon = null
+			switch_options.text = "No plugin selected"
+			switch_options.icon = null
 
 func _process(delta):
 	_update_btn_toggle_state()
