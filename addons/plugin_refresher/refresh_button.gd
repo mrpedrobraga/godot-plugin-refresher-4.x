@@ -8,6 +8,7 @@ const EDITOR_SETTINGS_NAME_PREFIX = "refresher_plugin/"
 const EDITOR_SETTINGS_NAME_COMPACT = EDITOR_SETTINGS_NAME_PREFIX + "compact"
 
 var icon := preload("plug_icon.svg")
+
 @export var compact: bool = false:
 	set(value):
 		compact = value
@@ -61,32 +62,30 @@ func _update_plugins_list():
 	plugin_directories.clear()
 	plugin_names.clear()
 
-	var dir := DirAccess.open(PLUGIN_FOLDER)
-	for pdir in dir.get_directories():
-		if not pdir == "plugin_refresher":
-			_search_dir_for_plugins(PLUGIN_FOLDER, pdir)
+	_search_dir_for_plugins(PLUGIN_FOLDER)
 	selected_plugin_index = -1
 	for i in plugin_ids.size():
 		if plugin_ids[i] == selected_prior:
 			selected_plugin_index = i
 			break
 
-func _search_dir_for_plugins(base : String, dir_name : String):
-	var path = base.path_join(dir_name)
-	var dir = DirAccess.open(path)
+func _search_dir_for_plugins(plugin_folder: String, relative_base_folder: String = ""):
+	var path := plugin_folder.path_join(relative_base_folder)
+	var dir := DirAccess.open(path)
 	
-	for file in dir.get_files():
-		if file == "plugin.cfg":
-			var plugincfg = ConfigFile.new()
-			plugincfg.load(path.path_join(file))
-			
-			plugin_ids.push_back(dir_name)
-			plugin_directories.push_back(dir_name)
-			plugin_names.push_back(plugincfg.get_value("plugin", "name", ""))
-			return
-	for subdir in dir.get_directories():
-		if not subdir == "plugin_refresher":
-			_search_dir_for_plugins(path, subdir)
+	for subdir_name in dir.get_directories():
+		var relative_folder = relative_base_folder.path_join(subdir_name)
+		var subdir := DirAccess.open(path.path_join(subdir_name))
+		for file in subdir.get_files():
+			if file == "plugin.cfg":
+				if plugin_folder.path_join(relative_folder) == plugin.get_script().resource_path.get_base_dir():
+					continue
+				var plugincfg = ConfigFile.new()
+				plugincfg.load(path.path_join(subdir_name).path_join(file))
+				plugin_ids.push_back(relative_folder)
+				plugin_directories.push_back(relative_folder)
+				plugin_names.push_back(plugincfg.get_value("plugin", "name", ""))
+		_search_dir_for_plugins(plugin_folder, relative_folder)
 
 func _update_popup():
 	_update_plugins_list()
