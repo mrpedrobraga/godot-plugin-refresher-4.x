@@ -53,25 +53,30 @@ func _ready():
 	
 	await get_tree().process_frame
 	_update_plugins_list()
-	var selected_plugin := plugin.get_editor_interface().get_editor_settings().get_project_metadata(PROJECT_METADATA_SECTION, PROJECT_METADATA_KEY, "")
+	var selected_plugin = _get_project_metadata(PROJECT_METADATA_SECTION, PROJECT_METADATA_KEY, "")
 	selected_plugin_index = plugin_ids.find(selected_plugin)
 	
 	enable_menu.icon = list_icon
-	enable_menu.about_to_popup.connect(_on_enable_menu_about_to_popup)
-	enable_menu.get_popup().index_pressed.connect(_on_enable_menu_item_selected)
-	
-	if plugin.get_editor_interface().get_editor_settings().has_setting(EDITOR_SETTINGS_NAME_COMPACT):
-		compact = plugin.get_editor_interface().get_editor_settings().get_setting(EDITOR_SETTINGS_NAME_COMPACT)
-	_update_switch_options_button_look()
-	switch_options.button_down.connect(_on_switch_options_button_down)
-	switch_options.item_selected.connect(_on_switch_options_item_selected)
-
-	btn_toggle.toggled.connect(_on_btn_toggle_toggled)
-	
-	reset_button.pressed.connect(_on_restart_button_pressed)
-	
 	reset_button.icon = get_theme_icon(&"Reload", &"EditorIcons")
 	
+	compact = _get_editor_setting(EDITOR_SETTINGS_NAME_COMPACT, compact)
+	show_enable_menu = _get_editor_setting(EDITOR_SETTINGS_NAME_SHOW_ENABLE_MENU, show_enable_menu)
+	show_switch = _get_editor_setting(EDITOR_SETTINGS_NAME_SHOW_SWITCH, show_switch)
+	show_on_off_toggle = _get_editor_setting(EDITOR_SETTINGS_NAME_SHOW_ON_OFF_TOGGLE, show_on_off_toggle)
+	show_restart_button = _get_editor_setting(EDITOR_SETTINGS_NAME_SHOW_RESTART_BUTTON, show_restart_button)
+	if not show_enable_menu and not show_switch:
+		show_enable_menu = true
+	if not show_on_off_toggle and not show_restart_button:
+		show_on_off_toggle = true
+
+	enable_menu.about_to_popup.connect(_on_enable_menu_about_to_popup)
+	enable_menu.get_popup().index_pressed.connect(_on_enable_menu_item_selected)
+	switch_options.button_down.connect(_on_switch_options_button_down)
+	switch_options.item_selected.connect(_on_switch_options_item_selected)
+	btn_toggle.toggled.connect(_on_btn_toggle_toggled)
+	reset_button.pressed.connect(_on_restart_button_pressed)
+	
+	_update_switch_options_button_look()
 	_update_children_visibility()
 	_update_btn_toggle_state()
 
@@ -136,6 +141,21 @@ func _is_plugin_enabled(plugin_index: int) -> bool:
 
 func _set_plugin_enabled(plugin_index: int, enabled: bool):
 	plugin.get_editor_interface().set_plugin_enabled(plugin_directories[plugin_index], enabled)
+
+func _get_editor_setting(name: String, default_value: Variant = null) -> Variant:
+	if plugin.get_editor_interface().get_editor_settings().has_setting(name):
+		return plugin.get_editor_interface().get_editor_settings().get_setting(name)
+	else:
+		return default_value
+
+func _set_editor_setting(name: String, value: Variant):
+	plugin.get_editor_interface().get_editor_settings().set_setting(name, value)
+	
+func _set_project_metadata(section: String, key: String, data: Variant):
+	plugin.get_editor_interface().set_project_metadata(section, key, data)
+
+func _get_project_metadata(section: String, key: String, default: Variant = null):
+	return plugin.get_editor_interface().get_editor_settings().get_project_metadata(section, key, default)
 
 func _update_enable_menu_popup():
 	_update_plugins_list()
@@ -239,19 +259,25 @@ func _on_restart_button_pressed():
 func _on_switch_options_item_selected(index):
 	if index == compact_view_option_index:
 		compact = !compact
-		plugin.get_editor_interface().get_editor_settings().set_setting(EDITOR_SETTINGS_NAME_COMPACT, compact)
+		_set_editor_setting(EDITOR_SETTINGS_NAME_COMPACT, compact)
 		switch_options.selected = selected_plugin_index
 	elif index == show_on_off_toggle_option_index:
 		show_on_off_toggle = !show_on_off_toggle
-		plugin.get_editor_interface().get_editor_settings().set_setting(EDITOR_SETTINGS_NAME_SHOW_ON_OFF_TOGGLE, show_on_off_toggle)
+		_set_editor_setting(EDITOR_SETTINGS_NAME_SHOW_ON_OFF_TOGGLE, show_on_off_toggle)
+		if not show_on_off_toggle and not show_restart_button:
+			show_restart_button = true
+			_set_editor_setting(EDITOR_SETTINGS_NAME_SHOW_RESTART_BUTTON, show_restart_button)
 	elif index == show_restart_button_option_index:
 		show_restart_button = !show_restart_button
-		plugin.get_editor_interface().get_editor_settings().set_setting(EDITOR_SETTINGS_NAME_SHOW_RESTART_BUTTON, show_restart_button)
+		_set_editor_setting(EDITOR_SETTINGS_NAME_SHOW_RESTART_BUTTON, show_restart_button)
+		if not show_restart_button and not show_on_off_toggle:
+			show_on_off_toggle = true
+			_set_editor_setting(EDITOR_SETTINGS_NAME_SHOW_ON_OFF_TOGGLE, show_on_off_toggle)
 	elif index == show_enable_menu_option_index:
 		show_enable_menu = !show_enable_menu
-		plugin.get_editor_interface().get_editor_settings().set_setting(EDITOR_SETTINGS_NAME_SHOW_ENABLE_MENU, show_enable_menu)
+		_set_editor_setting(EDITOR_SETTINGS_NAME_SHOW_ENABLE_MENU, show_enable_menu)
 	elif index < plugin_ids.size():
-		plugin.get_editor_interface().get_editor_settings().set_project_metadata(PROJECT_METADATA_SECTION, PROJECT_METADATA_KEY, plugin_directories[switch_options.selected])
+		_set_project_metadata(PROJECT_METADATA_SECTION, PROJECT_METADATA_KEY, plugin_directories[switch_options.selected])
 		auto_enable = false
 		selected_plugin_index = index
 		if selected_plugin_index >= plugin_ids.size():
