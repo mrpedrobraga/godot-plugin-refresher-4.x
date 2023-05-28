@@ -5,7 +5,7 @@ var refresh_button : Control
 
 func _enter_tree():
 	refresh_button = preload("refresh_button.tscn").instantiate()
-	refresh_button.plugin = self
+	refresh_button.refresh_plugin = self
 	add_control_to_container(EditorPlugin.CONTAINER_TOOLBAR, refresh_button)
 
 func _exit_tree():
