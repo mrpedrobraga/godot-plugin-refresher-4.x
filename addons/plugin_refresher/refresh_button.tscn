@@ -1,15 +1,16 @@
-[gd_scene load_steps=2 format=3 uid="uid://b07tfwklwdv0w"]
+[gd_scene load_steps=2 format=3 uid="uid://n6f7qc0iheqh"]
 
-[ext_resource type="Script" path="res://addons/plugin_refresher/refresh_button.gd" id="1_hhy6q"]
+[ext_resource type="Script" path="res://addons/plugin_refresher/refresh_button.gd" id="1_x315w"]
 
 [node name="HBoxContainer" type="HBoxContainer"]
 offset_right = 91.0
 offset_bottom = 24.0
-script = ExtResource("1_hhy6q")
+script = ExtResource("1_x315w")
 
 [node name="enable_menu" type="MenuButton" parent="."]
 unique_name_in_owner = true
 layout_mode = 2
+tooltip_text = "Enable/disable plugins"
 
 [node name="switch_options" type="OptionButton" parent="."]
 unique_name_in_owner = true
