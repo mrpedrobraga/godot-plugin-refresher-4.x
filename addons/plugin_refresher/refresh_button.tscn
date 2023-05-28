@@ -1,11 +1,11 @@
-[gd_scene load_steps=2 format=3 uid="uid://n6f7qc0iheqh"]
+[gd_scene load_steps=2 format=3 uid="uid://bu24kkwsr1gej"]
 
-[ext_resource type="Script" path="res://addons/plugin_refresher/refresh_button.gd" id="1_x315w"]
+[ext_resource type="Script" path="res://addons/plugin_refresher/refresh_button.gd" id="1_air57"]
 
 [node name="HBoxContainer" type="HBoxContainer"]
 offset_right = 91.0
 offset_bottom = 24.0
-script = ExtResource("1_x315w")
+script = ExtResource("1_air57")
 
 [node name="enable_menu" type="MenuButton" parent="."]
 unique_name_in_owner = true
@@ -29,3 +29,7 @@ tooltip_text = "No plugin selected
 (Select plugin on the left)"
 focus_mode = 0
 disabled = true
+
+[node name="reset_button" type="Button" parent="."]
+unique_name_in_owner = true
+layout_mode = 2
