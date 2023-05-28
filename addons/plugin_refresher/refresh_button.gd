@@ -50,6 +50,7 @@ const PLUGIN_FOLDER := "res://addons/"
 
 func _ready():
 	plugin.main_screen_changed.connect(update_current_main_screen)
+	plugin.project_settings_changed.connect(_update_button_states)
 	
 	await get_tree().process_frame
 	_update_plugins_list()
@@ -78,7 +79,7 @@ func _ready():
 	
 	_update_switch_options_button_look()
 	_update_children_visibility()
-	_update_btn_toggle_state()
+	_update_button_states()
 
 var current_main_screen = null
 
@@ -282,7 +283,7 @@ func _on_switch_options_item_selected(index):
 		selected_plugin_index = index
 		if selected_plugin_index >= plugin_ids.size():
 			selected_plugin_index = -1
-		_update_btn_toggle_state()
+		_update_button_states()
 	_update_switch_options_button_look()
 
 func _update_children_visibility():
@@ -297,7 +298,7 @@ func _update_children_visibility():
 
 var auto_enable: bool = false
 
-func _update_btn_toggle_state():
+func _update_button_states():
 	if plugin != null and selected_plugin_index >= 0:
 		btn_toggle.disabled = false
 		var plugin_enabled = _is_plugin_enabled(selected_plugin_index)
@@ -306,10 +307,15 @@ func _update_btn_toggle_state():
 		btn_toggle.tooltip_text = ("Disable" if plugin_enabled else "Enable") \
 			+ " " + plugin_names[selected_plugin_index] \
 			+ "\n(Select plugin on the left)"
+		reset_button.tooltip_text = ("Restart" if plugin_enabled else "Restart") \
+			+ " " + plugin_names[selected_plugin_index] \
+			+ "\n(Select plugin on the left)"
 	else:
 		btn_toggle.set_pressed_no_signal(false)
 		btn_toggle.disabled = true
 		btn_toggle.tooltip_text = "No plugin selected" \
+			+ "\n(Select plugin on the left)"
+		reset_button.tooltip_text = "No plugin selected" \
 			+ "\n(Select plugin on the left)"
 
 func _update_switch_options_button_look():
@@ -323,12 +329,6 @@ func _update_switch_options_button_look():
 		else:
 			switch_options.text = "No plugin selected"
 			switch_options.icon = null
-
-func _process(delta):
-	_update_btn_toggle_state()
-	if auto_enable:
-		if not _is_plugin_enabled(selected_plugin_index):
-			_set_plugin_enabled(selected_plugin_index, true)
 
 func find_visible_child(node : Control):
 	for child in node.get_children():
