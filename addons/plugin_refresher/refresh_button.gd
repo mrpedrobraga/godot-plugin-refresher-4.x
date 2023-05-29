@@ -259,7 +259,6 @@ func _update_enable_menu_popup():
 	popup.set_item_metadata(popup.item_count - 1, MenuAction.SHOW_SWITCH)
 
 func _update_switch_button_popup():
-	print("[_update_switch_button_popup]")
 	_update_plugins_list()
 	
 	switch_options.clear()
@@ -408,7 +407,6 @@ func _update_button_states():
 		reset_button.tooltip_text = tooltip_text
 
 func _update_switch_options_button_look():
-	print("[_update_switch_options_button_look]")
 	if compact:
 		switch_options.text = ""
 		switch_options.icon = switch_icon
