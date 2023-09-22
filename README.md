@@ -1,9 +1,25 @@
 # Plugin Refresher
 
-A simple plugin refresher for 4.x, mounts as a button on the toolbar which scans your plugins and allow refreshing them without having to go to Project Settings.
+A tiny plugin manager, allows you to activate and deactivate your plugins quickly for fast iteration.
 
-It also keeps the current main screen open if possible.
+## Features
 
-### Small Issues
+### 1.0
 
-- Given how the Godot editor works, the plugin refresher won't be able to keep the main screen open until you switch to a new main screen for the first time after you enable this plugin. That's because the plugin needs to keep track of your main screen with a signal and can't directly retrieve the current selected screen.
+- Select your plugin and click the Toggle Button to activate or deactivate it.
+
+### 1.1
+
+Courtesy of @coderbloke, now the toolbar can extend to how several new ways of changing your plugins:
+- A set of checkboxes
+- A selector for your plugin + a toggle button AND a refresh button.
+
+### Issues / Roadmap
+
+- [ ] Won't load the toolbar when plugin just installs, currently requiring installing another plugin or project reload.
+- [ ] Refreshing a plugin won't keep the selected main screen open, since the plugin ceases to exist for a moment.
+- [ ] Integration with the future upcoming addon manager that @mrpedrobraga has in mind.
+
+## Contributing
+
+Open an issue or PR :-)

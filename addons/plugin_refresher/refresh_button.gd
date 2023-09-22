@@ -418,12 +418,13 @@ func _update_switch_options_button_look():
 			switch_options.text = "No plugin selected"
 			switch_options.icon = null
 
-func find_visible_child(node : Control):
-	for child in node.get_children():
-		if child.visible:
-			return child
-	return null
-
+# Currently not implemented anywhere,
+# It is useful, for writing plugins
+# which have main screens, to keep the same
+# tab selected across reloads.
+# The main screen tab tends to change
+# because the plugin's tab ceases to exist
+# when it is deactivated.
 func get_main_screen()->String:
 	var screen:String
 	var base:Panel = refresh_plugin.get_editor_interface().get_base_control()
