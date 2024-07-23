@@ -87,7 +87,6 @@ func _background_check():
 		get_tree().create_timer(background_check_cycle_sec).timeout.connect(_background_check)
 
 func _load_settings():
-	var current_main_screen = null
 	compact = _get_editor_setting(EDITOR_SETTINGS_NAME_COMPACT, compact)
 	show_enable_menu = _get_editor_setting(EDITOR_SETTINGS_NAME_SHOW_ENABLE_MENU, show_enable_menu)
 	show_switch = _get_editor_setting(EDITOR_SETTINGS_NAME_SHOW_SWITCH, show_switch)
@@ -98,11 +97,11 @@ func _load_settings():
 	if not show_on_off_toggle and not show_restart_button:
 		show_on_off_toggle = true
 
-var current_main_screen = null
+var current_main_screen: String
 
-func update_current_main_screen(s):
+func update_current_main_screen(screen_name: String):
 	if btn_toggle.button_pressed:
-		current_main_screen = s
+		current_main_screen = screen_name
 
 class PluginInfo:
 	# No clue yet, how to better identify them, so for future proof id array is added here.
@@ -133,7 +132,7 @@ enum MenuAction {
 	SHOW_ENABLE_MENU
 }
 
-func _get_plugin_index_by_id(id: String) -> int:
+func _get_plugin_index_by_id(id: Variant) -> int:
 	for i in plugins.size():
 		if plugins[i].id == id: return i
 	return -1
@@ -174,15 +173,15 @@ func _search_dir_for_plugins(relative_base_folder: String = ""):
 	var dir := DirAccess.open(path)
 	
 	for subdir_name in dir.get_directories():
-		var relative_folder = relative_base_folder.path_join(subdir_name)
+		var relative_folder := relative_base_folder.path_join(subdir_name)
 		var subdir := DirAccess.open(path.path_join(subdir_name))
 		if subdir == null: # Can happen for symlink. They are listed as folder, but if the link is broken, DirAccess returns null
 			continue
 		for file in subdir.get_files():
 			if file == "plugin.cfg":
-				if plugin_folder.path_join(relative_folder) == refresh_plugin.get_script().resource_path.get_base_dir():
+				if plugin_folder.path_join(relative_folder) == (refresh_plugin.get_script() as Script).resource_path.get_base_dir():
 					continue
-				var plugin_info = PluginInfo.new()
+				var plugin_info := PluginInfo.new()
 				plugin_info.id = relative_folder
 				plugin_info.directory = relative_folder
 				_update_plugin_info_from_config(plugin_info)
@@ -214,14 +213,14 @@ func _is_plugin_enabled(plugin_index: int) -> bool:
 func _set_plugin_enabled(plugin_index: int, enabled: bool):
 	refresh_plugin.get_editor_interface().set_plugin_enabled(plugins[plugin_index].directory, enabled)
 
-func _get_editor_setting(name: String, default_value: Variant = null) -> Variant:
-	if refresh_plugin.get_editor_interface().get_editor_settings().has_setting(name):
-		return refresh_plugin.get_editor_interface().get_editor_settings().get_setting(name)
+func _get_editor_setting(setting_name: String, default_value: Variant = null) -> Variant:
+	if refresh_plugin.get_editor_interface().get_editor_settings().has_setting(setting_name):
+		return refresh_plugin.get_editor_interface().get_editor_settings().get_setting(setting_name)
 	else:
 		return default_value
 
-func _set_editor_setting(name: String, value: Variant):
-	refresh_plugin.get_editor_interface().get_editor_settings().set_setting(name, value)
+func _set_editor_setting(setting_name: String, value: Variant):
+	refresh_plugin.get_editor_interface().get_editor_settings().set_setting(setting_name, value)
 	
 func _set_project_metadata(section: String, key: String, data: Variant):
 	refresh_plugin.get_editor_interface().get_editor_settings().set_project_metadata(section, key, data)
@@ -232,7 +231,7 @@ func _get_project_metadata(section: String, key: String, default: Variant = null
 func _update_enable_menu_popup():
 	_update_plugins_list()
 	
-	var popup = enable_menu.get_popup()
+	var popup := enable_menu.get_popup()
 	popup.clear()
 	
 	if plugins.size() > 0:
@@ -329,20 +328,20 @@ func _process_menu_action(action: MenuAction) -> bool:
 func _on_enable_menu_about_to_popup():
 	_update_enable_menu_popup()
 
-func _on_enable_menu_item_selected(index):
-	var metadata = enable_menu.get_popup().get_item_metadata(index)
+func _on_enable_menu_item_selected(index: int):
+	var metadata: Variant = enable_menu.get_popup().get_item_metadata(index)
 	if metadata is PluginInfo:
-		var plugin_index = _get_plugin_index_by_id((metadata as PluginInfo).id)
+		var plugin_index := _get_plugin_index_by_id((metadata as PluginInfo).id)
 		_set_plugin_enabled(plugin_index, !_is_plugin_enabled(plugin_index))
-	else:
-		_process_menu_action(metadata)
+	elif metadata is MenuAction:
+		_process_menu_action(metadata as MenuAction)
 
 func _on_switch_options_button_down():
 	_update_switch_button_popup()
 	_update_switch_options_button_look()
 
-func _on_btn_toggle_toggled(button_pressed):
-	var current_main_screen_bkp = current_main_screen
+func _on_btn_toggle_toggled(button_pressed: bool):
+	var current_main_screen_bkp := current_main_screen
 	
 	if selected_plugin_index >= 0:
 		_set_plugin_enabled(selected_plugin_index, button_pressed)
@@ -356,8 +355,8 @@ func _on_restart_button_pressed():
 		_set_plugin_enabled(selected_plugin_index, false)
 	_set_plugin_enabled(selected_plugin_index, true)
 
-func _on_switch_options_item_selected(index):
-	var metadata = switch_options.get_item_metadata(index)
+func _on_switch_options_item_selected(index: int):
+	var metadata: Variant = switch_options.get_item_metadata(index)
 	if metadata is PluginInfo:
 		var plugin_index = _get_plugin_index_by_id((metadata as PluginInfo).id)
 		_set_project_metadata(PROJECT_METADATA_SECTION, PROJECT_METADATA_KEY, plugins[switch_options.selected].id)
@@ -368,8 +367,8 @@ func _on_switch_options_item_selected(index):
 			selected_plugin_index = index
 		_update_switch_options_button_look()
 		_update_button_states()
-	else:
-		_process_menu_action(metadata)
+	elif metadata is MenuAction:
+		_process_menu_action(metadata as MenuAction)
 
 func _update_children_visibility():
 	if enable_menu != null:
@@ -385,8 +384,8 @@ var auto_enable: bool = false
 
 func _update_button_states():
 	if refresh_plugin != null and selected_plugin_index >= 0:
-		var plugin_enabled = _is_plugin_enabled(selected_plugin_index)
-		var plugin_exists = not plugins[selected_plugin_index].deleted
+		var plugin_enabled := _is_plugin_enabled(selected_plugin_index)
+		var plugin_exists := not plugins[selected_plugin_index].deleted
 		if btn_toggle.button_pressed != plugin_enabled:
 			btn_toggle.set_pressed_no_signal(plugin_enabled)
 		btn_toggle.disabled = plugins[selected_plugin_index].deleted and not plugin_enabled
@@ -398,13 +397,13 @@ func _update_button_states():
 			+ " " + plugins[selected_plugin_index].name \
 			+ "\n(Select plugin on the left)"
 	else:
-		var tooltip_text = "No plugin selected" \
+		var btn_tooltip_text = "No plugin selected" \
 			+ "\n(Select plugin on the left)"
 		btn_toggle.set_pressed_no_signal(false)
 		btn_toggle.disabled = true
-		btn_toggle.tooltip_text = tooltip_text
+		btn_toggle.tooltip_text = btn_tooltip_text
 		reset_button.disabled = true
-		reset_button.tooltip_text = tooltip_text
+		reset_button.tooltip_text = btn_tooltip_text
 
 func _update_switch_options_button_look():
 	if compact:

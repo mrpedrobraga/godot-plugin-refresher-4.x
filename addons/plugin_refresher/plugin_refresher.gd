@@ -1,10 +1,12 @@
 @tool
 extends EditorPlugin
 
-var refresh_button : Control
+const RefreshButton := preload("refresh_button.gd")
+
+var refresh_button: RefreshButton
 
 func _enter_tree():
-	refresh_button = preload("refresh_button.tscn").instantiate()
+	refresh_button = preload("refresh_button.tscn").instantiate() as RefreshButton
 	refresh_button.refresh_plugin = self
 	add_control_to_container(EditorPlugin.CONTAINER_TOOLBAR, refresh_button)
 
